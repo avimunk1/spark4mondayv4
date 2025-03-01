@@ -94,7 +94,7 @@ const MondayBoard = forwardRef((props, ref) => {
           // Log column titles for debugging
           const firstItem = boardData.items_page.items[0];
           if (firstItem) {
-            console.log('Available columns:', firstItem.column_values.map(col => ({
+            console.log('Available columns:', firstItem.column_values.map((col: ColumnValue) => ({
               id: col.id,
               title: col.column.title,
               text: col.text
@@ -155,6 +155,7 @@ const MondayBoard = forwardRef((props, ref) => {
 
   const handleAuth = () => {
     const clientId = process.env.NEXT_PUBLIC_MONDAY_CLIENT_ID;
+    const mondayRedirectUrl = process.env.NEXT_PUBLIC_MONDAY_REDIRECT_URL;
     
     if (!clientId) {
       console.error('Client ID not configured');
@@ -163,7 +164,8 @@ const MondayBoard = forwardRef((props, ref) => {
     }
 
     // For Monday.com apps, we need to use their installation flow
-    const installUrl = `https://auth.monday.com/oauth2/authorize?client_id=${clientId}`;
+    const redirectUri = mondayRedirectUrl || `${window.location.origin}/api/auth/callback`;
+    const installUrl = `https://auth.monday.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=boards:read`;
     
     // When running locally, we need to handle this differently
     if (window.location.hostname === 'localhost') {

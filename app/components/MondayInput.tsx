@@ -10,7 +10,7 @@ interface MondayInputProps {
   onItemCreated?: () => void;
 }
 
-function MondayInput(props: MondayInputProps) {
+const MondayInput: React.FC<MondayInputProps> = (props) => {
   const { onSubmit, onItemCreated } = props;
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -103,6 +103,6 @@ function MondayInput(props: MondayInputProps) {
       </form>
     </div>
   );
-}
+};
 
 export default MondayInput; 

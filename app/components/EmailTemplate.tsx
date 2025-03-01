@@ -16,11 +16,12 @@ interface MondayApiResponse {
 
 interface ColumnValue {
   id: string;
-  title: string;
   text: string;
   value: string;
   column?: {
+    id: string;
     title: string;
+    type: string;
   };
 }
 
@@ -78,7 +79,7 @@ export const EmailTemplate: React.FC<EmailTemplateProps> = ({ boardId, itemId, c
       }
 
       const item = typedResponse.data.items[0];
-      console.log('Column values:', item.column_values.map(col => ({
+      console.log('Column values:', item.column_values.map((col: ColumnValue) => ({
         id: col.id,
         title: col.column?.title,
         text: col.text
