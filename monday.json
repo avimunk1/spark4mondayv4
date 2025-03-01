@@ -1,0 +1,30 @@
+{
+  "app_name": "Spark Monday App",
+  "description": "A custom Monday.com application",
+  "app_url": "https://spark4monday.vercel.app",
+  "start_url": "/",
+  "features": {
+    "board_views": {
+      "custom_view": {
+        "type": "board_view",
+        "name": "Spark View",
+        "url": "/"
+      }
+    },
+    "fields": [
+      {
+        "type": "text",
+        "name": "Text Input",
+        "supported_operations": ["create", "read", "update"]
+      }
+    ]
+  },
+  "permissions": [
+    "boards:read",
+    "boards:write",
+    "columns:read",
+    "columns:write",
+    "items:read",
+    "items:write"
+  ]
+} 
