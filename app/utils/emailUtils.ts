@@ -255,14 +255,18 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
 
 export const generateEmailFromTemplate = ({ item, headerImage, impactImage }: EmailTemplateOptions): string => {
   if (!item) {
+    console.error('Missing required template data');
     throw new Error('Missing required template data');
   }
 
   try {
+    console.log('Generating email template for item:', item.name);
     // Find the English text column
     const englishTextColumn = item.columnValues.find(col => col.column?.title === '❗טקטסט אנגלית');
+    console.log('Found English text column:', englishTextColumn);
     
     if (!englishTextColumn || !englishTextColumn.text) {
+      console.warn('No English text content found, using default');
       return EMAIL_TEMPLATE
         .replace(/\{\{text\}\}/g, 'No content available')
         .replace(/\{\{name\}\}/g, item.name || '')
@@ -275,14 +279,18 @@ export const generateEmailFromTemplate = ({ item, headerImage, impactImage }: Em
     const formattedText = englishTextColumn.text
       .replace(/\\n/g, '\n')
       .trim();
+    console.log('Formatted text:', formattedText);
 
     // Replace all placeholders
-    return EMAIL_TEMPLATE
+    const result = EMAIL_TEMPLATE
       .replace(/\{\{text\}\}/g, formattedText)
       .replace(/\{\{name\}\}/g, item.name || '')
       .replace(/\{\{businessName\}\}/g, item.name || '')
       .replace(/\{\{headerImage\}\}/g, headerImage || '')
       .replace(/\{\{impactImage\}\}/g, impactImage || '');
+
+    console.log('Generated template length:', result.length);
+    return result;
   } catch (error) {
     console.error('Error generating email template:', error);
     throw new Error('Failed to generate email template');

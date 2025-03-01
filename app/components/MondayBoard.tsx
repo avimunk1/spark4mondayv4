@@ -140,15 +140,18 @@ const MondayBoard = forwardRef((props, ref) => {
         }
       });
     } else {
-      // When running standalone, use the API token
+      // When running standalone, check for authentication
+      const token = process.env.NEXT_PUBLIC_MONDAY_API_TOKEN;
       const defaultBoardId = process.env.NEXT_PUBLIC_MONDAY_BOARD_ID;
-      if (defaultBoardId) {
+      
+      if (token && defaultBoardId) {
+        // Only set as authenticated if we have both token and board ID
         setIsAuthenticated(true);
         setContext({ boardId: Number(defaultBoardId) });
         fetchItems(Number(defaultBoardId));
       } else {
         setLoading(false);
-        setError('Board ID not configured');
+        // Don't set error, just leave isAuthenticated as false to show auth button
       }
     }
   }, []);

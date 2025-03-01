@@ -22,6 +22,101 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ boardId, itemId, columnId
   const headerInputRef = useRef<HTMLInputElement>(null);
   const impactInputRef = useRef<HTMLInputElement>(null);
 
+  // Function to update iframe content
+  const updateIframeContent = useCallback((html: string) => {
+    if (!previewRef.current) {
+      console.error('No iframe reference available');
+      return;
+    }
+
+    // Wait for iframe to be ready
+    const checkIframe = () => {
+      const iframeDoc = previewRef.current?.contentDocument;
+      if (iframeDoc) {
+        iframeDoc.open();
+        iframeDoc.write(html);
+        iframeDoc.close();
+      } else {
+        setTimeout(checkIframe, 100); // Check again in 100ms
+      }
+    };
+    checkIframe();
+  }, []);
+
+  // Effect to update iframe when emailHtml changes
+  useEffect(() => {
+    if (emailHtml) {
+      updateIframeContent(emailHtml);
+    }
+  }, [emailHtml, updateIframeContent]);
+
+  const generateEmailPreview = useCallback(async (newHeaderImage?: string | null, newImpactImage?: string | null) => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Starting email preview generation for item:', itemId);
+
+      const query = `query {
+        items (ids: [${itemId}]) {
+          name
+          column_values {
+            id
+            text
+            value
+            column {
+              id
+              title
+              type
+            }
+          }
+        }
+      }`;
+
+      console.log('Sending API query:', query);
+      const response = await monday.api(query);
+      console.log('API Response:', response);
+      
+      if (!response?.data?.items?.[0]) {
+        console.error('No item data found in response');
+        throw new Error('No item data found');
+      }
+
+      const item = response.data.items[0];
+      console.log('Item data:', item);
+      console.log('Column values:', item.column_values);
+
+      const html = generateEmailFromTemplate({
+        item: {
+          name: item.name,
+          columnValues: item.column_values
+        },
+        headerImage: newHeaderImage !== undefined ? newHeaderImage : headerImage,
+        impactImage: newImpactImage !== undefined ? newImpactImage : impactImage
+      });
+      console.log('Generated HTML length:', html.length);
+
+      setEmailHtml(html);
+    } catch (err) {
+      console.error('Detailed error in generateEmailPreview:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate email');
+    } finally {
+      setLoading(false);
+    }
+  }, [itemId, headerImage, impactImage]);
+
+  // Initialize Monday SDK with debug logging
+  useEffect(() => {
+    console.log('Initializing Monday SDK');
+    const token = process.env.NEXT_PUBLIC_MONDAY_API_TOKEN;
+    if (token) {
+      console.log('Token found, setting up Monday SDK');
+      monday.setToken(token);
+      generateEmailPreview();
+    } else {
+      console.error('No Monday.com API token found');
+    }
+  }, [generateEmailPreview]);
+
   const handleImageUpload = async (file: File, isHeader: boolean) => {
     try {
       const reader = new FileReader();
@@ -42,73 +137,6 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ boardId, itemId, columnId
       setError('Failed to upload image');
     }
   };
-
-  const generateEmailPreview = useCallback(async (newHeaderImage?: string | null, newImpactImage?: string | null) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const query = `query {
-        items (ids: [${itemId}]) {
-          name
-          column_values {
-            id
-            text
-            value
-            column {
-              id
-              title
-              type
-            }
-          }
-        }
-      }`;
-
-      const response = await monday.api(query);
-      
-      if (!response?.data?.items?.[0]) {
-        throw new Error('No item data found');
-      }
-
-      const item = response.data.items[0];
-      const html = generateEmailFromTemplate({
-        item: {
-          name: item.name,
-          columnValues: item.column_values
-        },
-        headerImage: newHeaderImage !== undefined ? newHeaderImage : headerImage,
-        impactImage: newImpactImage !== undefined ? newImpactImage : impactImage
-      });
-
-      setEmailHtml(html);
-
-      // Update iframe content if it exists
-      if (previewRef.current) {
-        const iframeDoc = previewRef.current.contentDocument;
-        if (iframeDoc) {
-          iframeDoc.open();
-          iframeDoc.write(html);
-          iframeDoc.close();
-        }
-      }
-    } catch (err) {
-      console.error('Error generating email:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate email');
-    } finally {
-      setLoading(false);
-    }
-  }, [itemId, headerImage, impactImage]);
-
-  useEffect(() => {
-    const token = process.env.NEXT_PUBLIC_MONDAY_API_TOKEN;
-    if (!token) {
-      setError('API token not configured');
-      return;
-    }
-
-    monday.setToken(token);
-    generateEmailPreview();
-  }, [generateEmailPreview]);
 
   // Handle messages from the iframe
   useEffect(() => {
