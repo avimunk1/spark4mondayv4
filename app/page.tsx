@@ -19,15 +19,14 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen p-8 bg-gray-50" dir="rtl">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <main className="min-h-screen p-8 bg-gray-50">
+      <div className="max-w-7xl mx-auto space-y-8">
         <h1 className="text-3xl font-bold text-center mb-8">לוח פריטים</h1>
         
         {authError && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-center">
-            {authError === 'no_code' && 'האימות נכשל: לא התקבל קוד אישור'}
-            {authError === 'auth_failed' && 'האימות נכשל: אנא נסה שוב'}
-            {authError !== 'no_code' && authError !== 'auth_failed' && `שגיאת אימות: ${authError}`}
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong className="font-bold">Authentication Error: </strong>
+            <span className="block sm:inline">{authError}</span>
           </div>
         )}
 

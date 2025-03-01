@@ -10,7 +10,8 @@ interface EmailTemplateOptions {
       };
     }[];
   };
-  svgTemplate: string;
+  headerImage?: string | null;
+  impactImage?: string | null;
 }
 
 const EMAIL_TEMPLATE = `<!DOCTYPE html>
@@ -39,108 +40,73 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       margin: 0 auto;
       direction: ltr;
       text-align: left;
+      background: #fff;
     }
 
     .header-section {
+      display: flex;
+      height: 200px;
+    }
+
+    .header-left {
+      width: 50%;
+      background: #620879;
+      padding: 30px;
+      position: relative;
+    }
+
+    .header-right {
+      width: 50%;
+      background: #B4E7F8;
       position: relative;
       overflow: hidden;
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
     }
-    
+
+    .header-right:hover {
+      opacity: 0.9;
+    }
+
     .spark-logo {
-      padding: 20px;
-      display: flex;
-      align-items: center;
+      margin-bottom: 20px;
     }
 
     .spark-logo span {
       color: #E637BF;
       font-size: 24px;
       font-weight: bold;
+      font-family: Arial, sans-serif;
     }
 
     .spark-logo span sup {
-      color: #333;
-      font-size: 16px;
+      font-size: 12px;
+      color: #fff;
     }
 
-    .flag-corner {
-      position: absolute;
-      top: -20px;
-      left: -20px;
-      width: 200px;
-      transform: rotate(-15deg);
-    }
-    
-    .main-content {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-    }
-    
-    .left-section {
-      background: #620879;
-      padding: 40px;
-      color: white;
-      text-align: left;
-    }
-    
     .title {
-      font-size: 32px;
+      color: #fff;
+      font-size: 28px;
       font-weight: bold;
       margin-bottom: 10px;
-      text-align: left;
     }
     
     .subtitle {
       color: #64E0E0;
-      font-size: 28px;
+      font-size: 20px;
       line-height: 1.2;
-      text-align: left;
-    }
-    
-    .right-section {
-      background: #B4E7F8;
-      position: relative;
-    }
-    
-    .clouds {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-    }
-    
-    .cloud {
-      position: absolute;
-      background: white;
-      border-radius: 50%;
-    }
-    
-    .cloud-1 { width: 40px; height: 40px; right: 20%; top: 20%; }
-    .cloud-2 { width: 50px; height: 50px; right: 50%; top: 30%; }
-    .cloud-3 { width: 30px; height: 30px; right: 80%; top: 15%; }
-    
-    .hills {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 40%;
-      background: #8CC63F;
-      clip-path: polygon(0% 100%, 0% 40%, 33% 60%, 66% 30%, 100% 50%, 100% 100%);
     }
 
     .letter-section {
-      background: #fff;
       padding: 30px;
-      margin: 20px;
-      border-radius: 10px;
-      text-align: left;
     }
     
     .letter-heading {
       color: #620879;
-      font-size: 28px;
+      font-size: 24px;
       font-weight: bold;
       margin-bottom: 20px;
-      text-align: left;
     }
     
     .letter-text {
@@ -148,34 +114,25 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       font-size: 16px;
       line-height: 1.8;
       margin-bottom: 20px;
-      text-align: left;
     }
 
     .signature {
       color: #620879;
       font-weight: bold;
-      text-align: left;
     }
 
     .landscape-section {
-      height: 200px;
+      height: 150px;
       background: #B4E7F8;
       position: relative;
+      overflow: hidden;
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
     }
 
-    .landscape-hills {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 60%;
-      background: #8CC63F;
-      clip-path: polygon(0% 100%, 0% 30%, 33% 50%, 66% 20%, 100% 40%, 100% 100%);
-    }
-
-    .landscape-clouds {
-      position: absolute;
-      width: 100%;
-      height: 100%;
+    .landscape-section:hover {
+      opacity: 0.9;
     }
 
     .impact-section {
@@ -198,11 +155,6 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       text-align: left;
     }
 
-    .business-name {
-      color: white;
-      font-weight: bold;
-    }
-
     .impact-button {
       display: inline-block;
       background: white;
@@ -212,7 +164,7 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       text-decoration: none;
       font-weight: bold;
       font-size: 18px;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
 
     .website {
@@ -227,14 +179,15 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       display: flex;
       justify-content: center;
       gap: 20px;
-      margin-bottom: 30px;
+      margin: 20px 0;
     }
 
     .social-link {
-      width: 40px;
-      height: 40px;
+      width: 30px;
+      height: 30px;
       background: white;
       border-radius: 50%;
+      display: inline-block;
     }
 
     .logos {
@@ -245,41 +198,27 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
     }
 
     .logo {
-      height: 40px;
-    }
-
-    @media (max-width: 600px) {
-      .main-content {
-        grid-template-columns: 1fr;
-      }
-      .title { font-size: 24px; }
-      .subtitle { font-size: 20px; }
-      .impact-title { font-size: 24px; }
-      .impact-text { font-size: 16px; }
+      height: 30px;
+      filter: brightness(0) invert(1);
     }
   </style>
+  <script>
+    function handleImageClick(type) {
+      window.parent.postMessage({ type: 'imageClick', imageType: type }, '*');
+    }
+  </script>
 </head>
 <body>
   <div class="email-container">
     <div class="header-section">
-      <div class="spark-logo">
-        <span>Spark<sup>IL</sup> News</span>
-      </div>
-      <img class="flag-corner" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 150'%3E%3Cpath d='M0,0 L200,0 L200,150 L0,150 Z' fill='white'/%3E%3Cpath d='M0,20 L200,20 L200,130 L0,130 Z' fill='white'/%3E%3Cpath d='M100,35 L150,95 L50,95 Z' fill='%230038B8'/%3E%3Cpath d='M100,115 L150,55 L50,55 Z' fill='%230038B8'/%3E%3C/svg%3E" alt="Israel Flag">
-    </div>
-
-    <div class="main-content">
-      <div class="left-section">
-        <div class="title">Exciting Update</div>
-        <div class="subtitle">from Parvati<br>Indian food in<br>the Arava</div>
-      </div>
-      <div class="right-section">
-        <div class="clouds">
-          <div class="cloud cloud-1"></div>
-          <div class="cloud cloud-2"></div>
-          <div class="cloud cloud-3"></div>
+      <div class="header-left">
+        <div class="spark-logo">
+          <span>Spark<sup>IL</sup> News</span>
         </div>
-        <div class="hills"></div>
+        <div class="title">Exciting Update</div>
+        <div class="subtitle">from {{name}}</div>
+      </div>
+      <div class="header-right" style="background-image: url('{{headerImage}}')" onclick="handleImageClick('header')">
       </div>
     </div>
 
@@ -289,12 +228,7 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       <div class="signature">Best Regards,<br>{{name}}</div>
     </div>
 
-    <div class="landscape-section">
-      <div class="landscape-clouds">
-        <div class="cloud cloud-1"></div>
-        <div class="cloud cloud-2"></div>
-      </div>
-      <div class="landscape-hills"></div>
+    <div class="landscape-section" style="background-image: url('{{impactImage}}')" onclick="handleImageClick('landscape')">
     </div>
 
     <div class="impact-section">
@@ -305,10 +239,10 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       <a href="https://www.sparkil.org" class="impact-button">Make a new impact!</a>
       <a href="https://www.sparkil.org" class="website">www.sparkil.org</a>
       <div class="social-links">
-        <a href="#" class="social-link facebook"></a>
-        <a href="#" class="social-link instagram"></a>
-        <a href="#" class="social-link linkedin"></a>
-        <a href="#" class="social-link youtube"></a>
+        <a href="#" class="social-link"></a>
+        <a href="#" class="social-link"></a>
+        <a href="#" class="social-link"></a>
+        <a href="#" class="social-link"></a>
       </div>
       <div class="logos">
         <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'%3E%3Cpath d='M10,20 h80 M50,10 v20' stroke='white' stroke-width='2'/%3E%3C/svg%3E" alt="Jewish Agency Logo" class="logo">
@@ -319,7 +253,7 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
 </body>
 </html>`;
 
-export const generateEmailFromTemplate = ({ item, svgTemplate }: EmailTemplateOptions): string => {
+export const generateEmailFromTemplate = ({ item, headerImage, impactImage }: EmailTemplateOptions): string => {
   if (!item) {
     throw new Error('Missing required template data');
   }
@@ -327,10 +261,14 @@ export const generateEmailFromTemplate = ({ item, svgTemplate }: EmailTemplateOp
   try {
     // Find the English text column
     const englishTextColumn = item.columnValues.find(col => col.column?.title === '❗טקטסט אנגלית');
+    
     if (!englishTextColumn || !englishTextColumn.text) {
-      return EMAIL_TEMPLATE.replace(/\{\{text\}\}/g, 'No content available')
-                          .replace(/\{\{name\}\}/g, item.name || '')
-                          .replace(/\{\{businessName\}\}/g, item.name || '');
+      return EMAIL_TEMPLATE
+        .replace(/\{\{text\}\}/g, 'No content available')
+        .replace(/\{\{name\}\}/g, item.name || '')
+        .replace(/\{\{businessName\}\}/g, item.name || '')
+        .replace(/\{\{headerImage\}\}/g, headerImage || '')
+        .replace(/\{\{impactImage\}\}/g, impactImage || '');
     }
 
     // Process the text to ensure proper line breaks and formatting
@@ -342,7 +280,9 @@ export const generateEmailFromTemplate = ({ item, svgTemplate }: EmailTemplateOp
     return EMAIL_TEMPLATE
       .replace(/\{\{text\}\}/g, formattedText)
       .replace(/\{\{name\}\}/g, item.name || '')
-      .replace(/\{\{businessName\}\}/g, item.name || '');
+      .replace(/\{\{businessName\}\}/g, item.name || '')
+      .replace(/\{\{headerImage\}\}/g, headerImage || '')
+      .replace(/\{\{impactImage\}\}/g, impactImage || '');
   } catch (error) {
     console.error('Error generating email template:', error);
     throw new Error('Failed to generate email template');

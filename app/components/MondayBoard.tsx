@@ -267,14 +267,7 @@ const MondayBoard = forwardRef((props, ref) => {
       </div>
 
       {selectedItem && selectedColumn && context?.boardId && (
-        <div className="mb-8 border-b pb-8">
-          <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-700">
-              נבחר פריט: <strong>{selectedItem.name}</strong>
-              <br />
-              עמודה נבחרת: <strong>{selectedItem.column_values.find(col => col.id === selectedColumn)?.column.title}</strong>
-            </p>
-          </div>
+        <div className="mb-8">
           <EmailTemplate
             boardId={context.boardId}
             itemId={selectedItem.id}
@@ -291,7 +284,6 @@ const MondayBoard = forwardRef((props, ref) => {
         ) : (
           <div className="grid gap-4">
             {items.map((item) => {
-              // Filter only the columns we want to display and log for debugging
               const filteredColumns = item.column_values.filter((col: ColumnValue) => {
                 const isRelevant = 
                   col.column.title === '❗טקטסט אנגלית' || 
