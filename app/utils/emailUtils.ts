@@ -14,7 +14,7 @@ interface EmailTemplateOptions {
 }
 
 const EMAIL_TEMPLATE = `<!DOCTYPE html>
-<html dir="rtl" lang="he">
+<html dir="ltr" lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,11 +30,15 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       font-family: Arial, sans-serif;
       line-height: 1.6;
       background: #fff;
+      direction: ltr;
+      text-align: left;
     }
     
     .email-container {
       max-width: 600px;
       margin: 0 auto;
+      direction: ltr;
+      text-align: left;
     }
 
     .header-section {
@@ -62,9 +66,9 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
     .flag-corner {
       position: absolute;
       top: -20px;
-      right: -20px;
+      left: -20px;
       width: 200px;
-      transform: rotate(15deg);
+      transform: rotate(-15deg);
     }
     
     .main-content {
@@ -76,18 +80,21 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       background: #620879;
       padding: 40px;
       color: white;
+      text-align: left;
     }
     
     .title {
       font-size: 32px;
       font-weight: bold;
       margin-bottom: 10px;
+      text-align: left;
     }
     
     .subtitle {
       color: #64E0E0;
       font-size: 28px;
       line-height: 1.2;
+      text-align: left;
     }
     
     .right-section {
@@ -107,9 +114,9 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       border-radius: 50%;
     }
     
-    .cloud-1 { width: 40px; height: 40px; left: 20%; top: 20%; }
-    .cloud-2 { width: 50px; height: 50px; left: 50%; top: 30%; }
-    .cloud-3 { width: 30px; height: 30px; left: 80%; top: 15%; }
+    .cloud-1 { width: 40px; height: 40px; right: 20%; top: 20%; }
+    .cloud-2 { width: 50px; height: 50px; right: 50%; top: 30%; }
+    .cloud-3 { width: 30px; height: 30px; right: 80%; top: 15%; }
     
     .hills {
       position: absolute;
@@ -125,6 +132,7 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       padding: 30px;
       margin: 20px;
       border-radius: 10px;
+      text-align: left;
     }
     
     .letter-heading {
@@ -132,6 +140,7 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       font-size: 28px;
       font-weight: bold;
       margin-bottom: 20px;
+      text-align: left;
     }
     
     .letter-text {
@@ -139,11 +148,13 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       font-size: 16px;
       line-height: 1.8;
       margin-bottom: 20px;
+      text-align: left;
     }
 
     .signature {
       color: #620879;
       font-weight: bold;
+      text-align: left;
     }
 
     .landscape-section {
@@ -184,6 +195,7 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       font-size: 18px;
       line-height: 1.6;
       margin-bottom: 30px;
+      text-align: left;
     }
 
     .business-name {
