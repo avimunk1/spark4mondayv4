@@ -202,11 +202,6 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       filter: brightness(0) invert(1);
     }
   </style>
-  <script>
-    function handleImageClick(type) {
-      window.parent.postMessage({ type: 'imageClick', imageType: type }, '*');
-    }
-  </script>
 </head>
 <body>
   <div class="email-container">
@@ -218,7 +213,7 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
         <div class="title">Exciting Update</div>
         <div class="subtitle">from {{name}}</div>
       </div>
-      <div class="header-right" style="background-image: url('{{headerImage}}')" onclick="handleImageClick('header')">
+      <div class="header-right" style="background-image: url('{{headerImage}}')" onclick="window.parent.postMessage({type: 'header-click'}, '*')">
       </div>
     </div>
 
@@ -228,7 +223,7 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
       <div class="signature">Best Regards,<br>{{name}}</div>
     </div>
 
-    <div class="landscape-section" style="background-image: url('{{impactImage}}')" onclick="handleImageClick('landscape')">
+    <div class="landscape-section" style="background-image: url('{{impactImage}}')" onclick="window.parent.postMessage({type: 'landscape-click'}, '*')">
     </div>
 
     <div class="impact-section">

@@ -21,35 +21,41 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ boardId, itemId, columnId
   const previewRef = useRef<HTMLIFrameElement>(null);
   const headerInputRef = useRef<HTMLInputElement>(null);
   const impactInputRef = useRef<HTMLInputElement>(null);
+  const [iframeReady, setIframeReady] = React.useState(false);
 
   // Function to update iframe content
   const updateIframeContent = useCallback((html: string) => {
     if (!previewRef.current) {
-      console.error('No iframe reference available');
+      console.log('Waiting for iframe to be available...');
       return;
     }
 
-    // Wait for iframe to be ready
-    const checkIframe = () => {
-      const iframeDoc = previewRef.current?.contentDocument;
-      if (iframeDoc) {
-        iframeDoc.open();
-        iframeDoc.write(html);
-        iframeDoc.close();
-      } else {
-        setTimeout(checkIframe, 100); // Check again in 100ms
-      }
-    };
-    checkIframe();
+    try {
+      const iframe = previewRef.current;
+      iframe.setAttribute('srcDoc', html);
+      
+      // Set a timeout to mark as ready after content is likely loaded
+      setTimeout(() => {
+        setIframeReady(true);
+        console.log('Iframe marked as ready');
+      }, 500);
+
+    } catch (err) {
+      console.error('Error updating iframe:', err);
+      setIframeReady(true);
+    }
   }, []);
 
   // Effect to update iframe when emailHtml changes
   useEffect(() => {
     if (emailHtml) {
+      console.log('Email HTML updated, length:', emailHtml.length);
+      setIframeReady(false);
       updateIframeContent(emailHtml);
     }
   }, [emailHtml, updateIframeContent]);
 
+  // Modify generateEmailPreview to not save automatically
   const generateEmailPreview = useCallback(async (newHeaderImage?: string | null, newImpactImage?: string | null) => {
     try {
       setLoading(true);
@@ -72,19 +78,13 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ boardId, itemId, columnId
         }
       }`;
 
-      console.log('Sending API query:', query);
       const response = await monday.api(query);
-      console.log('API Response:', response);
       
       if (!response?.data?.items?.[0]) {
-        console.error('No item data found in response');
         throw new Error('No item data found');
       }
 
       const item = response.data.items[0];
-      console.log('Item data:', item);
-      console.log('Column values:', item.column_values);
-
       const html = generateEmailFromTemplate({
         item: {
           name: item.name,
@@ -93,60 +93,133 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ boardId, itemId, columnId
         headerImage: newHeaderImage !== undefined ? newHeaderImage : headerImage,
         impactImage: newImpactImage !== undefined ? newImpactImage : impactImage
       });
-      console.log('Generated HTML length:', html.length);
 
       setEmailHtml(html);
     } catch (err) {
-      console.error('Detailed error in generateEmailPreview:', err);
+      console.error('Error in generateEmailPreview:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate email');
     } finally {
       setLoading(false);
     }
   }, [itemId, headerImage, impactImage]);
 
-  // Initialize Monday SDK with debug logging
+  // Modify handleSave to just log for now
+  const handleSave = useCallback(async () => {
+    if (!emailHtml) return;
+    console.log('Save functionality temporarily disabled');
+    setError('Save functionality coming soon');
+  }, [emailHtml]);
+
+  // Initialize Monday SDK and load initial preview
   useEffect(() => {
-    console.log('Initializing Monday SDK');
-    const token = process.env.NEXT_PUBLIC_MONDAY_API_TOKEN;
-    if (token) {
-      console.log('Token found, setting up Monday SDK');
-      monday.setToken(token);
-      generateEmailPreview();
-    } else {
-      console.error('No Monday.com API token found');
-    }
+    const initializePreview = async () => {
+      console.log('Initializing Monday SDK and preview');
+      const token = process.env.NEXT_PUBLIC_MONDAY_API_TOKEN;
+      if (token) {
+        try {
+          console.log('Token found, setting up Monday SDK');
+          monday.setToken(token);
+          
+          // Generate preview without saving
+          await generateEmailPreview(undefined, undefined);
+          
+          console.log('Initial preview generated without saving');
+        } catch (err) {
+          console.error('Error during initialization:', err);
+          setError('Failed to initialize preview');
+        }
+      } else {
+        console.error('No Monday.com API token found');
+        setError('API token not configured');
+      }
+    };
+
+    initializePreview();
   }, [generateEmailPreview]);
 
+  // Modify handleImageUpload to only handle local preview
   const handleImageUpload = async (file: File, isHeader: boolean) => {
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        if (typeof reader.result === 'string') {
-          if (isHeader) {
-            await setHeaderImage(reader.result);
-            await generateEmailPreview(reader.result, impactImage);
-          } else {
-            await setImpactImage(reader.result);
-            await generateEmailPreview(headerImage, reader.result);
-          }
-        }
-      };
-      reader.readAsDataURL(file);
+      setLoading(true);
+      setError(null);
+
+      console.log('Creating preview for image:', file.name);
+      
+      // Create a local URL for preview
+      const localUrl = URL.createObjectURL(file);
+      console.log('Created local URL for preview:', localUrl);
+
+      // Update state and regenerate preview immediately
+      if (isHeader) {
+        setHeaderImage(localUrl);
+        console.log('Setting header image:', localUrl);
+      } else {
+        setImpactImage(localUrl);
+        console.log('Setting impact image:', localUrl);
+      }
+
+      // Force preview regeneration with local URL
+      await generateEmailPreview(
+        isHeader ? localUrl : headerImage,
+        isHeader ? impactImage : localUrl
+      );
+
     } catch (err) {
-      console.error('Error uploading image:', err);
-      setError('Failed to upload image');
+      console.error('Error handling image:', err);
+      setError('Failed to handle image: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Handle messages from the iframe
+  // Send test email only to avimunk@gmail.com
+  const sendTestEmail = useCallback(async () => {
+    if (!emailHtml) {
+      setError('No email content to send');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/send-test-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          html: emailHtml,
+          subject: `Test Email - ${new Date().toLocaleString()}`
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send test email');
+      }
+
+      setError('Test email sent successfully to avimunk@gmail.com');
+      
+    } catch (err) {
+      console.error('Error sending test email:', err);
+      setError('Failed to send test email: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setLoading(false);
+    }
+  }, [emailHtml]);
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'imageClick') {
-        if (event.data.imageType === 'header') {
-          headerInputRef.current?.click();
-        } else if (event.data.imageType === 'landscape') {
-          impactInputRef.current?.click();
-        }
+      console.log('Received message from iframe:', event.data);
+      
+      if (event.data.type === 'header-click') {
+        console.log('Header image click detected');
+        headerInputRef.current?.click();
+      } else if (event.data.type === 'landscape-click') {
+        console.log('Landscape image click detected');
+        impactInputRef.current?.click();
       }
     };
 
@@ -172,7 +245,23 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ boardId, itemId, columnId
 
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="p-4 border-b flex justify-between items-center">
+        <h2 className="text-lg font-semibold">Email Preview</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={sendTestEmail}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            Send Test Email
+          </button>
+        </div>
+      </div>
       <div className="relative">
+        {!iframeReady && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        )}
         <input
           ref={headerInputRef}
           type="file"
@@ -197,6 +286,8 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ boardId, itemId, columnId
           ref={previewRef}
           className="w-full h-[800px] border-0"
           title="Email Preview"
+          sandbox="allow-scripts allow-same-origin allow-top-navigation-to-custom-protocols"
+          srcDoc={emailHtml || ''}
         />
       </div>
     </div>
