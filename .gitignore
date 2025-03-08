@@ -41,3 +41,12 @@ next-env.d.ts
 # IDE
 .idea
 .vscode
+
+# Uploaded files
+/public/uploads/*
+!public/uploads/.gitkeep
+
+# Environment files
+.env
+.env.local
+.env*.local

@@ -202,60 +202,55 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ boardId, itemId, columnId
       // Create a copy of the HTML for email
       let emailHtmlWithBase64 = emailHtml;
 
-      // Replace all instances of the image URLs with their base64 versions
+      // Replace header image
       if (headerImage && headerImageEmail) {
         console.log('Processing header image:');
         console.log('- Original URL length:', headerImage.length);
         console.log('- Base64 URL length:', headerImageEmail.length);
 
-        // Find the img tag containing the header image
-        const imgTagRegex = new RegExp(`<img[^>]*src=["']${headerImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*>`, 'g');
-        const matches = emailHtmlWithBase64.match(imgTagRegex);
-        console.log('- Found img tags:', matches?.length);
-
-        if (matches) {
-          matches.forEach(match => {
-            const newImgTag = match.replace(headerImage, headerImageEmail);
-            emailHtmlWithBase64 = emailHtmlWithBase64.replace(match, newImgTag);
-          });
+        // Create a temporary DOM parser to handle the HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(emailHtmlWithBase64, 'text/html');
+        
+        // Find all img tags
+        const images = doc.getElementsByTagName('img');
+        for (let i = 0; i < images.length; i++) {
+          const img = images[i];
+          if (img.src === headerImage) {
+            img.src = headerImageEmail;
+            console.log('- Replaced header image successfully');
+          }
         }
-
-        // Verify replacement
-        const verifyMatch = emailHtmlWithBase64.includes(headerImageEmail);
-        console.log('- Verification of base64 in final HTML:', verifyMatch);
+        
+        emailHtmlWithBase64 = doc.documentElement.outerHTML;
       }
 
+      // Replace impact image
       if (impactImage && impactImageEmail) {
         console.log('Processing impact image:');
         console.log('- Original URL length:', impactImage.length);
         console.log('- Base64 URL length:', impactImageEmail.length);
 
-        // Find the img tag containing the impact image
-        const imgTagRegex = new RegExp(`<img[^>]*src=["']${impactImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*>`, 'g');
-        const matches = emailHtmlWithBase64.match(imgTagRegex);
-        console.log('- Found img tags:', matches?.length);
-
-        if (matches) {
-          matches.forEach(match => {
-            const newImgTag = match.replace(impactImage, impactImageEmail);
-            emailHtmlWithBase64 = emailHtmlWithBase64.replace(match, newImgTag);
-          });
+        // Create a temporary DOM parser to handle the HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(emailHtmlWithBase64, 'text/html');
+        
+        // Find all img tags
+        const images = doc.getElementsByTagName('img');
+        for (let i = 0; i < images.length; i++) {
+          const img = images[i];
+          if (img.src === impactImage) {
+            img.src = impactImageEmail;
+            console.log('- Replaced impact image successfully');
+          }
         }
-
-        // Verify replacement
-        const verifyMatch = emailHtmlWithBase64.includes(impactImageEmail);
-        console.log('- Verification of base64 in final HTML:', verifyMatch);
+        
+        emailHtmlWithBase64 = doc.documentElement.outerHTML;
       }
 
-      // Log the final HTML around both image sections
-      const headerSection = emailHtmlWithBase64.substring(
-        emailHtmlWithBase64.indexOf('header-right') - 50,
-        emailHtmlWithBase64.indexOf('header-right') + 500
-      );
-      console.log('Final header section (truncated):', 
-        headerSection.substring(0, 100) + '...' + 
-        headerSection.substring(headerSection.length - 100)
-      );
+      // Log the final HTML length and a sample
+      console.log('Final HTML length:', emailHtmlWithBase64.length);
+      console.log('Sample of final HTML:', emailHtmlWithBase64.substring(0, 200) + '...');
       
       const response = await fetch('/api/send-test-email', {
         method: 'POST',
