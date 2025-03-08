@@ -20,228 +20,48 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Spark Newsletter</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      background: #fff;
-      direction: ltr;
-      text-align: left;
-    }
-    
-    .email-container {
-      max-width: 600px;
-      margin: 0 auto;
-      direction: ltr;
-      text-align: left;
-      background: #fff;
-    }
-
-    .header-section {
-      display: flex;
-      height: 200px;
-    }
-
-    .header-left {
-      width: 50%;
-      background: #620879;
-      padding: 30px;
-      position: relative;
-    }
-
-    .header-right {
-      width: 50%;
-      background: #B4E7F8;
-      position: relative;
-      overflow: hidden;
-      background-size: cover;
-      background-position: center;
-      cursor: pointer;
-    }
-
-    .header-right:hover {
-      opacity: 0.9;
-    }
-
-    .spark-logo {
-      margin-bottom: 20px;
-    }
-
-    .spark-logo span {
-      color: #E637BF;
-      font-size: 24px;
-      font-weight: bold;
-      font-family: Arial, sans-serif;
-    }
-
-    .spark-logo span sup {
-      font-size: 12px;
-      color: #fff;
-    }
-
-    .title {
-      color: #fff;
-      font-size: 28px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    
-    .subtitle {
-      color: #64E0E0;
-      font-size: 20px;
-      line-height: 1.2;
-    }
-
-    .letter-section {
-      padding: 30px;
-    }
-    
-    .letter-heading {
-      color: #620879;
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 20px;
-    }
-    
-    .letter-text {
-      color: #620879;
-      font-size: 16px;
-      line-height: 1.8;
-      margin-bottom: 20px;
-    }
-
-    .signature {
-      color: #620879;
-      font-weight: bold;
-    }
-
-    .landscape-section {
-      height: 150px;
-      background: #B4E7F8;
-      position: relative;
-      overflow: hidden;
-      background-size: cover;
-      background-position: center;
-      cursor: pointer;
-    }
-
-    .landscape-section:hover {
-      opacity: 0.9;
-    }
-
-    .impact-section {
-      background: #E637BF;
-      color: white;
-      padding: 40px;
-      text-align: center;
-    }
-
-    .impact-title {
-      font-size: 32px;
-      font-weight: bold;
-      margin-bottom: 20px;
-    }
-
-    .impact-text {
-      font-size: 18px;
-      line-height: 1.6;
-      margin-bottom: 30px;
-      text-align: left;
-    }
-
-    .impact-button {
-      display: inline-block;
-      background: white;
-      color: #E637BF;
-      padding: 15px 40px;
-      border-radius: 5px;
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 18px;
-      margin-bottom: 20px;
-    }
-
-    .website {
-      color: white;
-      text-decoration: none;
-      font-size: 18px;
-      margin-bottom: 20px;
-      display: block;
-    }
-
-    .social-links {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      margin: 20px 0;
-    }
-
-    .social-link {
-      width: 30px;
-      height: 30px;
-      background: white;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    .logos {
-      display: flex;
-      justify-content: center;
-      gap: 30px;
-      align-items: center;
-    }
-
-    .logo {
-      height: 30px;
-      filter: brightness(0) invert(1);
-    }
-  </style>
 </head>
-<body>
-  <div class="email-container">
-    <div class="header-section">
-      <div class="header-left">
-        <div class="spark-logo">
-          <span>Spark<sup>IL</sup> News</span>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; line-height: 1.6; background: #fff; direction: ltr; text-align: left;">
+  <div class="email-container" style="max-width: 600px; margin: 0 auto; direction: ltr; text-align: left; background: #fff;">
+    <div class="header-section" style="display: flex; height: 200px;">
+      <div class="header-left" style="width: 50%; background: #620879; padding: 30px; position: relative;">
+        <div class="spark-logo" style="margin-bottom: 20px;">
+          <span style="color: #E637BF; font-size: 24px; font-weight: bold; font-family: Arial, sans-serif;">Spark<sup style="font-size: 12px; color: #fff;">IL</sup> News</span>
         </div>
-        <div class="title">Exciting Update</div>
-        <div class="subtitle">from {{name}}</div>
+        <div class="title" style="color: #fff; font-size: 28px; font-weight: bold; margin-bottom: 10px;">Exciting Update</div>
+        <div class="subtitle" style="color: #64E0E0; font-size: 20px; line-height: 1.2;">from {{name}}</div>
       </div>
-      <div class="header-right" style="background-image: url('{{headerImage}}')" onclick="window.parent.postMessage({type: 'header-click'}, '*')">
+      <div class="header-right" style="width: 50%; position: relative; overflow: hidden;">
+        <img src="{{headerImage}}" alt="Header Image" style="width: 100%; height: 200px; object-fit: cover;" onclick="window.parent.postMessage({type: 'header-click'}, '*')">
       </div>
     </div>
 
-    <div class="letter-section">
-      <div class="letter-heading">Dear Lenders,</div>
-      <div class="letter-text">{{text}}</div>
-      <div class="signature">Best Regards,<br>{{name}}</div>
+    <div class="letter-section" style="padding: 30px;">
+      <div class="letter-heading" style="color: #620879; font-size: 24px; font-weight: bold; margin-bottom: 20px;">Dear Lenders,</div>
+      <div class="letter-text" style="color: #620879; font-size: 16px; line-height: 1.8; margin-bottom: 20px;">{{text}}</div>
+      <div class="signature" style="color: #620879; font-weight: bold;">Best Regards,<br>{{name}}</div>
     </div>
 
-    <div class="landscape-section" style="background-image: url('{{impactImage}}')" onclick="window.parent.postMessage({type: 'landscape-click'}, '*')">
+    <div class="landscape-section" style="height: 150px; position: relative; overflow: hidden;">
+      <img src="{{impactImage}}" alt="Impact Image" style="width: 100%; height: 150px; object-fit: cover;" onclick="window.parent.postMessage({type: 'landscape-click'}, '*')">
     </div>
 
-    <div class="impact-section">
-      <div class="impact-title">Make a Bigger Impact Today!</div>
-      <div class="impact-text">
-        {{name}}'s journey is just one example of the resilience and determination of small business owners. Many others are still in need of your help. Visit the SparkIL platform today and support more businesses like <span class="business-name">{{businessName}}</span>, so together, we can drive meaningful change in their lives and communities.
+    <div class="impact-section" style="background: #E637BF; color: white; padding: 40px; text-align: center;">
+      <div class="impact-title" style="font-size: 32px; font-weight: bold; margin-bottom: 20px;">Make a Bigger Impact Today!</div>
+      <div class="impact-text" style="font-size: 18px; line-height: 1.6; margin-bottom: 30px; text-align: left;">
+        {{name}}'s journey is just one example of the resilience and determination of small business owners. Many others are still in need of your help. Visit the SparkIL platform today and support more businesses like <span style="font-weight: bold;">{{businessName}}</span>, so together, we can drive meaningful change in their lives and communities.
       </div>
-      <a href="https://www.sparkil.org" class="impact-button">Make a new impact!</a>
-      <a href="https://www.sparkil.org" class="website">www.sparkil.org</a>
-      <div class="social-links">
-        <a href="#" class="social-link"></a>
-        <a href="#" class="social-link"></a>
-        <a href="#" class="social-link"></a>
-        <a href="#" class="social-link"></a>
+      <a href="https://www.sparkil.org" class="impact-button" style="display: inline-block; background: white; color: #E637BF; padding: 15px 40px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 18px; margin-bottom: 20px;">Make a new impact!</a>
+      <a href="https://www.sparkil.org" class="website" style="color: white; text-decoration: none; font-size: 18px; margin-bottom: 20px; display: block;">www.sparkil.org</a>
+      <div class="social-links" style="display: flex; justify-content: center; gap: 20px; margin: 20px 0;">
+        <a href="#" class="social-link" style="width: 30px; height: 30px; background: white; border-radius: 50%; display: inline-block;"></a>
+        <a href="#" class="social-link" style="width: 30px; height: 30px; background: white; border-radius: 50%; display: inline-block;"></a>
+        <a href="#" class="social-link" style="width: 30px; height: 30px; background: white; border-radius: 50%; display: inline-block;"></a>
+        <a href="#" class="social-link" style="width: 30px; height: 30px; background: white; border-radius: 50%; display: inline-block;"></a>
       </div>
-      <div class="logos">
-        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'%3E%3Cpath d='M10,20 h80 M50,10 v20' stroke='white' stroke-width='2'/%3E%3C/svg%3E" alt="Jewish Agency Logo" class="logo">
-        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'%3E%3Ctext x='50' y='25' font-family='Arial' font-size='20' fill='white' text-anchor='middle'%3EOgen%3C/text%3E%3C/svg%3E" alt="Ogen Logo" class="logo">
+      <div class="logos" style="display: flex; justify-content: center; gap: 30px; align-items: center;">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'%3E%3Cpath d='M10,20 h80 M50,10 v20' stroke='white' stroke-width='2'/%3E%3C/svg%3E" alt="Jewish Agency Logo" style="height: 30px; filter: brightness(0) invert(1);">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'%3E%3Ctext x='50' y='25' font-family='Arial' font-size='20' fill='white' text-anchor='middle'%3EOgen%3C/text%3E%3C/svg%3E" alt="Ogen Logo" style="height: 30px; filter: brightness(0) invert(1);">
       </div>
     </div>
   </div>
@@ -256,26 +76,32 @@ export const generateEmailFromTemplate = ({ item, headerImage, impactImage }: Em
 
   try {
     console.log('Generating email template for item:', item.name);
+    console.log('Header image provided:', headerImage);
+    console.log('Impact image provided:', impactImage);
+    
     // Find the English text column
     const englishTextColumn = item.columnValues.find(col => col.column?.title === '❗טקטסט אנגלית');
     console.log('Found English text column:', englishTextColumn);
     
     if (!englishTextColumn || !englishTextColumn.text) {
       console.warn('No English text content found, using default');
-      return EMAIL_TEMPLATE
+      const result = EMAIL_TEMPLATE
         .replace(/\{\{text\}\}/g, 'No content available')
         .replace(/\{\{name\}\}/g, item.name || '')
         .replace(/\{\{businessName\}\}/g, item.name || '')
         .replace(/\{\{headerImage\}\}/g, headerImage || '')
         .replace(/\{\{impactImage\}\}/g, impactImage || '');
+      
+      console.log('Generated template with default text. Header image present:', result.includes(headerImage || ''));
+      console.log('Impact image present:', result.includes(impactImage || ''));
+      return result;
     }
 
     // Process the text to ensure proper line breaks and formatting
     const formattedText = englishTextColumn.text
       .replace(/\\n/g, '\n')
       .trim();
-    console.log('Formatted text:', formattedText);
-
+    
     // Replace all placeholders
     const result = EMAIL_TEMPLATE
       .replace(/\{\{text\}\}/g, formattedText)
@@ -284,7 +110,13 @@ export const generateEmailFromTemplate = ({ item, headerImage, impactImage }: Em
       .replace(/\{\{headerImage\}\}/g, headerImage || '')
       .replace(/\{\{impactImage\}\}/g, impactImage || '');
 
-    console.log('Generated template length:', result.length);
+    console.log('Generated template with content. Header image present:', result.includes(headerImage || ''));
+    console.log('Impact image present:', result.includes(impactImage || ''));
+    console.log('Sample of header image section:', result.substring(
+      result.indexOf('header-right') - 50,
+      result.indexOf('header-right') + 200
+    ));
+    
     return result;
   } catch (error) {
     console.error('Error generating email template:', error);

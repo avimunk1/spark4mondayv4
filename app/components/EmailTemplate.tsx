@@ -18,6 +18,8 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ boardId, itemId, columnId
   const [emailHtml, setEmailHtml] = React.useState<string | null>(null);
   const [headerImage, setHeaderImage] = React.useState<string | null>(null);
   const [impactImage, setImpactImage] = React.useState<string | null>(null);
+  const [headerImageEmail, setHeaderImageEmail] = React.useState<string | null>(null);
+  const [impactImageEmail, setImpactImageEmail] = React.useState<string | null>(null);
   const previewRef = useRef<HTMLIFrameElement>(null);
   const headerInputRef = useRef<HTMLInputElement>(null);
   const impactInputRef = useRef<HTMLInputElement>(null);
@@ -137,31 +139,45 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ boardId, itemId, columnId
     initializePreview();
   }, [generateEmailPreview]);
 
-  // Modify handleImageUpload to only handle local preview
+  // Modify handleImageUpload to upload images to our new endpoint
   const handleImageUpload = async (file: File, isHeader: boolean) => {
     try {
       setLoading(true);
       setError(null);
 
-      console.log('Creating preview for image:', file.name);
+      console.log('Uploading image:', file.name);
       
-      // Create a local URL for preview
-      const localUrl = URL.createObjectURL(file);
-      console.log('Created local URL for preview:', localUrl);
-
-      // Update state and regenerate preview immediately
+      // Create form data for upload
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Upload the file
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+      
+      const data = await response.json();
+      
+      // Update state with both URLs
       if (isHeader) {
-        setHeaderImage(localUrl);
-        console.log('Setting header image:', localUrl);
+        setHeaderImage(data.url);
+        setHeaderImageEmail(data.emailUrl);
+        console.log('Setting header image:', data.url);
       } else {
-        setImpactImage(localUrl);
-        console.log('Setting impact image:', localUrl);
+        setImpactImage(data.url);
+        setImpactImageEmail(data.emailUrl);
+        console.log('Setting impact image:', data.url);
       }
 
-      // Force preview regeneration with local URL
+      // Force preview regeneration with preview URL
       await generateEmailPreview(
-        isHeader ? localUrl : headerImage,
-        isHeader ? impactImage : localUrl
+        isHeader ? data.url : headerImage,
+        isHeader ? impactImage : data.url
       );
 
     } catch (err) {
@@ -183,13 +199,71 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ boardId, itemId, columnId
       setLoading(true);
       setError(null);
       
+      // Create a copy of the HTML for email
+      let emailHtmlWithBase64 = emailHtml;
+
+      // Replace all instances of the image URLs with their base64 versions
+      if (headerImage && headerImageEmail) {
+        console.log('Processing header image:');
+        console.log('- Original URL length:', headerImage.length);
+        console.log('- Base64 URL length:', headerImageEmail.length);
+
+        // Find the img tag containing the header image
+        const imgTagRegex = new RegExp(`<img[^>]*src=["']${headerImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*>`, 'g');
+        const matches = emailHtmlWithBase64.match(imgTagRegex);
+        console.log('- Found img tags:', matches?.length);
+
+        if (matches) {
+          matches.forEach(match => {
+            const newImgTag = match.replace(headerImage, headerImageEmail);
+            emailHtmlWithBase64 = emailHtmlWithBase64.replace(match, newImgTag);
+          });
+        }
+
+        // Verify replacement
+        const verifyMatch = emailHtmlWithBase64.includes(headerImageEmail);
+        console.log('- Verification of base64 in final HTML:', verifyMatch);
+      }
+
+      if (impactImage && impactImageEmail) {
+        console.log('Processing impact image:');
+        console.log('- Original URL length:', impactImage.length);
+        console.log('- Base64 URL length:', impactImageEmail.length);
+
+        // Find the img tag containing the impact image
+        const imgTagRegex = new RegExp(`<img[^>]*src=["']${impactImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*>`, 'g');
+        const matches = emailHtmlWithBase64.match(imgTagRegex);
+        console.log('- Found img tags:', matches?.length);
+
+        if (matches) {
+          matches.forEach(match => {
+            const newImgTag = match.replace(impactImage, impactImageEmail);
+            emailHtmlWithBase64 = emailHtmlWithBase64.replace(match, newImgTag);
+          });
+        }
+
+        // Verify replacement
+        const verifyMatch = emailHtmlWithBase64.includes(impactImageEmail);
+        console.log('- Verification of base64 in final HTML:', verifyMatch);
+      }
+
+      // Log the final HTML around both image sections
+      const headerSection = emailHtmlWithBase64.substring(
+        emailHtmlWithBase64.indexOf('header-right') - 50,
+        emailHtmlWithBase64.indexOf('header-right') + 500
+      );
+      console.log('Final header section (truncated):', 
+        headerSection.substring(0, 100) + '...' + 
+        headerSection.substring(headerSection.length - 100)
+      );
+      
       const response = await fetch('/api/send-test-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          html: emailHtml,
+          html: emailHtmlWithBase64,
           subject: `Test Email - ${new Date().toLocaleString()}`
         })
       });
@@ -208,7 +282,7 @@ const EmailTemplate: React.FC<EmailTemplateProps> = ({ boardId, itemId, columnId
     } finally {
       setLoading(false);
     }
-  }, [emailHtml]);
+  }, [emailHtml, headerImage, headerImageEmail, impactImage, impactImageEmail]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
