@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server';
 import sgMail from '@sendgrid/mail';
 
+// Define SendGrid error interface
+interface SendGridError {
+  response?: {
+    body?: {
+      errors?: Array<{ message: string }>;
+    };
+  };
+  message?: string;
+  code?: number;
+}
+
 // Ensure only avimunk@gmail.com can receive test emails
 const ALLOWED_TEST_EMAIL = 'avimunk@gmail.com';
 
@@ -55,7 +66,7 @@ export async function POST(request: Request) {
         filename: `image_${i + 1}.${type}`,
         type: `image/${type}`,
         disposition: 'inline',
-        content_id: contentId // SendGrid expects content_id, not contentId
+        content_id: contentId
       });
 
       console.log(`Processed image ${i + 1}:`, {
@@ -102,17 +113,21 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Error sending test email:', error);
+    
+    // Type guard for SendGrid error
+    const sendGridError = error as SendGridError;
+    
     // Extract detailed error information from SendGrid response
-    const errorDetails = error.response?.body?.errors 
-      ? error.response.body.errors
-      : [{ message: error.message || 'Unknown error' }];
+    const errorDetails = sendGridError.response?.body?.errors 
+      ? sendGridError.response.body.errors
+      : [{ message: sendGridError.message || 'Unknown error' }];
     
     return NextResponse.json(
       { 
         error: 'Failed to send email',
         details: errorDetails
       },
-      { status: error.code || 500 }
+      { status: sendGridError.code || 500 }
     );
   }
 } 
