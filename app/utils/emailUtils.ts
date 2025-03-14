@@ -7,6 +7,8 @@ interface EmailTemplateOptions {
       value: string;
       column?: {
         title: string;
+        id?: string;
+        type?: string;
       };
     }[];
   };
@@ -30,10 +32,16 @@ const EMAIL_TEMPLATE = `<!DOCTYPE html>
         </div>
         <div class="title" style="color: #fff; font-size: 28px; font-weight: bold; margin-bottom: 10px;">Exciting Update</div>
         <div class="subtitle" style="color: #64E0E0; font-size: 20px; line-height: 1.2;">from {{name}}</div>
+        <div class="business-name" style="color: #fff; font-size: 14px; margin-top: 10px;">Business Name: {{businessNameOriginal}}</div>
       </div>
       <div class="header-right" style="width: 50%; position: relative; overflow: hidden;">
         <img src="{{headerImage}}" alt="Header Image" style="width: 100%; height: 200px; object-fit: cover;" onclick="window.parent.postMessage({type: 'header-click'}, '*')">
       </div>
+    </div>
+
+    <div class="lookup-emails-section" style="background: #f0e6f3; padding: 15px; border-bottom: 2px solid #620879;">
+      <div style="font-weight: bold; color: #620879; margin-bottom: 5px;">Connected Lender Emails:</div>
+      <div style="color: #333; word-break: break-word; font-family: monospace;">{{lookupEmails}}</div>
     </div>
 
     <div class="letter-section" style="padding: 30px;">
@@ -79,16 +87,80 @@ export const generateEmailFromTemplate = ({ item, headerImage, impactImage }: Em
     console.log('Header image provided:', headerImage);
     console.log('Impact image provided:', impactImage);
     
-    // Find the English text column
-    const englishTextColumn = item.columnValues.find(col => col.column?.title === '❗טקטסט אנגלית');
-    console.log('Found English text column:', englishTextColumn);
+    // Log all column titles to help with debugging
+    console.log('All available columns:', item.columnValues.map(col => ({
+      title: col.column?.title,
+      id: col.column?.id,
+      hasText: !!col.text
+    })));
     
+    // Find all relevant columns with more flexible matching
+    const englishTextColumn = item.columnValues.find(col => 
+      col.column?.title === '❗ סקטסט אנגלית' || 
+      col.column?.title === '❗טקטסט אנגלית' ||
+      col.column?.title === '❗ טקסט אנגלית' ||
+      (col.column?.title && col.column.title.includes('טקסט') && col.column.title.includes('אנגלית'))
+    );
+    
+    const aiTextColumn = item.columnValues.find(col => 
+      col.column?.title === '❗טקטסט AI' ||
+      col.column?.title === '❗ טקטסט AI' ||
+      (col.column?.title && col.column.title.includes('טקסט') && col.column.title.includes('AI'))
+    );
+    
+    const projectNameColumn = item.columnValues.find(col => 
+      col.column?.title === 'project name' ||
+      (col.column?.title && col.column.title.toLowerCase().includes('project') && col.column.title.toLowerCase().includes('name'))
+    );
+    
+    const businessNameColumn = item.columnValues.find(col => 
+      col.column?.title === '🔸שם עסק מקורי מבעל העסק' ||
+      (col.column?.title && col.column.title.includes('שם עסק מקורי'))
+    );
+    
+    const lookupEmails = item.columnValues.find(col => col.column?.id === 'lookup_mknnf6y2');
+    
+    console.log('Found columns:', {
+      englishText: englishTextColumn ? {
+        title: englishTextColumn.column?.title,
+        text: englishTextColumn.text,
+        hasText: !!englishTextColumn.text
+      } : 'Not found',
+      aiText: aiTextColumn ? {
+        title: aiTextColumn.column?.title,
+        text: aiTextColumn.text,
+        hasText: !!aiTextColumn.text
+      } : 'Not found',
+      projectName: projectNameColumn ? {
+        title: projectNameColumn.column?.title,
+        text: projectNameColumn.text,
+        hasText: !!projectNameColumn.text
+      } : 'Not found',
+      businessName: businessNameColumn ? {
+        title: businessNameColumn.column?.title,
+        text: businessNameColumn.text,
+        hasText: !!businessNameColumn.text
+      } : 'Not found'
+    });
+    console.log('Found Lookup Emails raw data:', {
+      text: lookupEmails?.text,
+      value: lookupEmails?.value,
+      column: lookupEmails?.column
+    });
+
+    // Process the lookup emails - since we can't get them directly, we'll use a placeholder
+    let formattedLookupEmails = 'Use the "Get Lender Emails" button to fetch emails';
+    
+    console.log('Using placeholder for lookup emails');
+
     if (!englishTextColumn || !englishTextColumn.text) {
       console.warn('No English text content found, using default');
       const result = EMAIL_TEMPLATE
         .replace(/\{\{text\}\}/g, 'No content available')
         .replace(/\{\{name\}\}/g, item.name || '')
         .replace(/\{\{businessName\}\}/g, item.name || '')
+        .replace(/\{\{businessNameOriginal\}\}/g, businessNameColumn?.text || 'N/A')
+        .replace(/\{\{lookupEmails\}\}/g, formattedLookupEmails)
         .replace(/\{\{headerImage\}\}/g, headerImage || '')
         .replace(/\{\{impactImage\}\}/g, impactImage || '');
       
@@ -107,15 +179,14 @@ export const generateEmailFromTemplate = ({ item, headerImage, impactImage }: Em
       .replace(/\{\{text\}\}/g, formattedText)
       .replace(/\{\{name\}\}/g, item.name || '')
       .replace(/\{\{businessName\}\}/g, item.name || '')
+      .replace(/\{\{businessNameOriginal\}\}/g, businessNameColumn?.text || 'N/A')
+      .replace(/\{\{lookupEmails\}\}/g, formattedLookupEmails)
       .replace(/\{\{headerImage\}\}/g, headerImage || '')
       .replace(/\{\{impactImage\}\}/g, impactImage || '');
 
     console.log('Generated template with content. Header image present:', result.includes(headerImage || ''));
     console.log('Impact image present:', result.includes(impactImage || ''));
-    console.log('Sample of header image section:', result.substring(
-      result.indexOf('header-right') - 50,
-      result.indexOf('header-right') + 200
-    ));
+    console.log('Business Name included:', businessNameColumn?.text || 'N/A');
     
     return result;
   } catch (error) {

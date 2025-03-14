@@ -40,6 +40,27 @@ interface Context {
   theme?: string;
 }
 
+// Helper function to retry API calls
+const retryApiCall = async (apiCall: () => Promise<any>, maxRetries = 3, delay = 1000) => {
+  let lastError;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`API call attempt ${attempt}/${maxRetries}`);
+      return await apiCall();
+    } catch (err) {
+      lastError = err;
+      console.error(`Attempt ${attempt} failed:`, err);
+      if (attempt < maxRetries) {
+        console.log(`Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        // Increase delay for next attempt
+        delay *= 2;
+      }
+    }
+  }
+  throw lastError;
+};
+
 const MondayBoard = forwardRef((props, ref) => {
   const [board, setBoard] = useState<Board | null>(null);
   const [items, setItems] = useState<BoardItem[]>([]);
@@ -52,66 +73,179 @@ const MondayBoard = forwardRef((props, ref) => {
 
   const fetchItems = async (boardId: number) => {
     try {
-      console.log('Fetching items for board:', boardId);
+      // Always use board 1720560988 regardless of what's passed
+      const targetBoardId = 1720560988;
+      console.log('Fetching items for board:', targetBoardId);
       setLoading(true);
+
+      // Verify token is set
+      const token = process.env.NEXT_PUBLIC_MONDAY_API_TOKEN;
+      if (!token) {
+        throw new Error('Monday.com API token not found');
+      }
+      console.log('API Token available:', token.substring(0, 10) + '...' + token.substring(token.length - 5));
+
+      // Initialize SDK with token
+      console.log('Setting token in SDK');
+      monday.setToken(token);
       
-      const response = await monday.api(`
+      // Add Authorization header explicitly
+      const apiOptions = {
+        apiVersion: '2024-01',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json'
+        }
+      };
+      
+      // Test API connection first with a simpler query
+      console.log('Testing API connection with simple query');
+      const testResponse = await retryApiCall(() => monday.api(`
         query {
-          boards(ids: ${boardId}) {
+          me {
             name
-            columns {
-              id
-              title
-              type
-            }
-            items_page {
-              items {
+            email
+          }
+        }
+      `, apiOptions));
+
+      console.log('Authentication test raw response:', JSON.stringify(testResponse));
+
+      if (!testResponse?.data?.me) {
+        console.error('Authentication test failed:', testResponse);
+        throw new Error('Failed to authenticate with Monday.com API');
+      }
+
+      console.log('Authentication successful as:', testResponse.data.me.name);
+      
+      // Implement proper pagination to fetch all items
+      const pageSize = 500; // Maximum page size
+      let hasMoreItems = true;
+      let cursor: string | null = null;
+      let allItems: BoardItem[] = [];
+      
+      console.log('Starting pagination to fetch all items from board', targetBoardId);
+      
+      // Loop until we've fetched all items
+      while (hasMoreItems) {
+        // Fetch board data with explicit API version and pagination
+        const response = await retryApiCall(() => monday.api(`
+          query {
+            boards(ids: ${targetBoardId}) {
+              name
+              columns {
                 id
-                name
-                column_values {
+                title
+                type
+              }
+              items_page(limit: ${pageSize}${cursor ? `, cursor: "${cursor}"` : ''}) {
+                cursor
+                items {
                   id
-                  text
-                  value
-                  column {
+                  name
+                  column_values {
                     id
-                    title
-                    type
+                    text
+                    value
+                    column {
+                      id
+                      title
+                      type
+                    }
                   }
                 }
               }
             }
           }
+        `, apiOptions));
+
+        // Log the raw response for debugging
+        console.log('Raw API Response for page:', cursor || 'initial');
+
+        if (!response?.data) {
+          console.error('Invalid API response:', response);
+          throw new Error('Invalid response from Monday.com API');
         }
-      `);
 
-      console.log('API Response:', response);
+        if (!response.data?.boards || response.data.boards.length === 0) {
+          console.error('No board data in response:', response);
+          throw new Error('Board not found or inaccessible');
+        }
 
-      if (response.data?.boards && response.data.boards.length > 0) {
         const boardData = response.data.boards[0];
-        setBoard(boardData);
-        if (boardData.items_page?.items) {
-          console.log('Found items:', boardData.items_page.items.length);
-          // Log column titles for debugging
-          const firstItem = boardData.items_page.items[0];
-          if (firstItem) {
-            console.log('Available columns:', firstItem.column_values.map((col: ColumnValue) => ({
-              id: col.id,
-              title: col.column.title,
-              text: col.text
-            })));
-          }
-          setItems(boardData.items_page.items);
-        } else {
-          console.log('No items in board');
-          setItems([]);
+        
+        // Only set board data on the first page
+        if (allItems.length === 0) {
+          setBoard(boardData);
         }
-      } else {
-        console.log('No board data found');
-        throw new Error('Board not found or inaccessible');
+        
+        if (!boardData.items_page?.items) {
+          console.error('No items found in board:', boardData);
+          throw new Error('No items found in board');
+        }
+
+        const pageItems = boardData.items_page.items;
+        const nextCursor = boardData.items_page.cursor;
+        
+        console.log(`Fetched ${pageItems.length} items from board (page cursor: ${cursor || 'initial'})`);
+        
+        // Add the fetched items to our collection
+        allItems = [...allItems, ...pageItems];
+        
+        // Check if we need to fetch more items
+        if (nextCursor && pageItems.length === pageSize) {
+          cursor = nextCursor;
+          console.log(`More items available, continuing with cursor: ${cursor}`);
+        } else {
+          hasMoreItems = false;
+          console.log(`No more items to fetch, total items: ${allItems.length}`);
+        }
       }
+      
+      console.log(`Fetched a total of ${allItems.length} items from board`);
+      
+      // Filter items where color_mknv2m3p equals "Ready"
+      const filteredItems = allItems.filter((item: BoardItem) => {
+        const colorColumn = item.column_values.find((col: ColumnValue) => col.id === 'color_mknv2m3p');
+        
+        // Log the color field value for debugging
+        if (colorColumn) {
+          console.log(`Item ${item.id} - ${item.name} has color_mknv2m3p value:`, colorColumn.text);
+        }
+        
+        // Check if the field exists and has value "Ready"
+        return colorColumn && colorColumn.text === 'Ready';
+      });
+      
+      console.log(`Filtered to ${filteredItems.length} items with color_mknv2m3p = "Ready"`);
+      
+      // Set filtered items
+      setItems(filteredItems);
+      
+      if (filteredItems.length > 0) {
+        const firstItem = filteredItems[0];
+        console.log('Sample columns from first item:', firstItem.column_values.map((col: ColumnValue) => ({
+          id: col.id,
+          title: col.column.title,
+          text: col.text
+        })));
+      }
+
     } catch (err) {
       console.error('Detailed error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch items');
+      let errorMessage = err instanceof Error ? err.message : 'Failed to fetch items';
+      
+      // Check if the error is HTML (authentication error)
+      if (typeof errorMessage === 'string' && errorMessage.toLowerCase().includes('<!doctype')) {
+        errorMessage = 'Authentication failed. Please check your Monday.com API token.';
+      }
+      
+      console.error('Error details:', {
+        message: errorMessage,
+        boardId,
+        token: process.env.NEXT_PUBLIC_MONDAY_API_TOKEN ? 'Present' : 'Missing'
+      });
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -123,10 +257,13 @@ const MondayBoard = forwardRef((props, ref) => {
 
   useEffect(() => {
     // Initialize the SDK
-    monday.setToken(process.env.NEXT_PUBLIC_MONDAY_API_TOKEN || '');
+    const token = process.env.NEXT_PUBLIC_MONDAY_API_TOKEN || '';
+    console.log('Initializing Monday SDK with token:', token ? `${token.substring(0, 10)}...${token.substring(token.length - 5)}` : 'No token');
+    monday.setToken(token);
     
     // Check if we're running inside Monday.com
     const isEmbedded = window.location.hostname.includes('monday.com');
+    console.log('Running in embedded mode:', isEmbedded);
     
     if (isEmbedded) {
       // When embedded in Monday.com, use their context
@@ -275,6 +412,7 @@ const MondayBoard = forwardRef((props, ref) => {
             boardId={context.boardId}
             itemId={selectedItem.id}
             columnId={selectedColumn}
+            boardItems={items}
           />
         </div>
       )}
@@ -288,13 +426,28 @@ const MondayBoard = forwardRef((props, ref) => {
           <div className="grid gap-4">
             {items.map((item) => {
               const filteredColumns = item.column_values.filter((col: ColumnValue) => {
+                // Log all column titles to help with debugging
+                console.log(`Column title: "${col.column.title}", id: ${col.column.id}, has text: ${!!col.text}`);
+                
+                // Include the 4 columns: 2 existing + 2 query columns
                 const isRelevant = 
-                  col.column.title === '❗טקטסט אנגלית' || 
-                  col.column.title === '❗טקטסט AI' ||
-                  col.column.title === 'project name';
-                console.log(`Column ${col.column.title}: ${isRelevant ? 'included' : 'filtered out'}`);
+                  // 2 existing columns
+                  col.column.title === '❗ סקטסט אנגלית' || 
+                  col.column.title === '❗טקטסט אנגלית' ||
+                  col.column.title.includes('טקסט') && col.column.title.includes('אנגלית') ||
+                  col.column.title === '🔸שם עסק מקורי מבעל העסק' ||
+                  col.column.title.includes('שם עסק מקורי') ||
+                  
+                  // 2 query columns
+                  col.column.id === 'connect_boards' ||
+                  col.column.id === 'status';
+                
                 return isRelevant;
               });
+
+              // Log the filtered columns for this item
+              console.log(`Item ${item.name} has ${filteredColumns.length} filtered columns:`, 
+                filteredColumns.map(col => col.column.title));
 
               return (
                 <div

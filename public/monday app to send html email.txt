@@ -1,0 +1,163 @@
+﻿Technical Solution Outline
+Documentation 
+
+
+──────────────────────────
+
+
+Version Control
+
+
+date
+	Version
+	By
+	Dec 26, 2024
+	1.0 
+	Avi
+	
+
+	
+
+	
+
+	
+
+
+
+________________
+
+
+1. Introduction 
+1.1. About the project
+SparkIL is committed to strengthening the connection between the Jewish diaspora and Israelis through a micro-lending platform. The MVP (Minimum Viable Product) will establish a foundational infrastructure to support this mission in the future. A key focus of the MVP is the development of a semi-automated process to replace the manual work currently required to update lenders on business progress. This manual process is labor-intensive and time-consuming, but the new system will streamline operations, enhance efficiency, and provide lenders with timely and accurate updates. By modernizing this process, SparkIL will improve the overall experience for lenders, fostering stronger relationships and trust within the community.
+1.2 Why This Application?
+We are developing this application because Monday.com does not natively support the following requirements:
+1. Retrieving lender emails from a separate board.
+2. Merging the email content ("email body") with a predefined email template.
+1.3 Pre-Processing in Monday.com
+The pre-processing for generating the email content is entirely managed within Monday.com using automations. This process includes:
+1. Creating a business record in Monday.com.
+2. Sending a questionnaire to the business.
+3. Generating the email body based on the business’s responses.
+4. Storing the generated email body in Monday.com, ready for review and finalization.
+________________
+
+
+2. Functional Requirements
+2.1 Application Goals
+This application allows Spark Customer Support Representatives to:
+* Review pending email updates before sending them to lenders.
+* Replace default images with images uploaded manually.
+* Send a test email for validation.
+* Send the final email update to all lenders associated with a business.
+2.2 User Stories
+As a user, I can:
+* View a list of businesses that have sent an update but not yet sent the email to lenders. 
+* Open a single update and review its final design, including the generated email body.
+* Replace two images in the email design by uploading images from my computer.
+* Send a test email to myself for verification.
+* Send the final email to all lenders associated with the business.
+
+
+________________
+3. Implementation Overview
+3.1 Monday.com Boards
+We are working with two Monday.com boards:
+* Board ID: 1720560988 (Main Board) – Each business has a single record.
+* Board ID: 1720560983 (Lenders Board) – Contains a list of lenders, with each lender represented as a separate record.
+4. Application Workflow
+4.1 Displaying the List of Businesses
+Filtering Logic
+The list view will allow the user to select a business update. The list will only display businesses that:
+✅ Exist in board 1720560988.
+✅ Have a non-empty value in numeric_mknn4ekf (indicating the update is ready).
+✅ Have not yet sent the email update to lenders.
+Retrieving the List
+1. Fetch all records from board 1720560988 using the Monday Graph API (paginated, 500 items per request).
+2. Filter the results:
+   * Display only items where numeric_mknn4ekf is not empty.
+3. Display the filtered list to the user.
+________________
+
+
+4.2 Email Preview Page
+Once a user selects a business from the list, they are redirected to the email preview page, where they can:
+* View the final designed email combining:
+   * The email body stored in Monday.com.
+   * A predefined HTML template based on an SVG design provided by the customer.
+* Replace images by manually uploading new ones.
+* Send a test email to themselves.
+* Send the final email to all lenders associated with the business.
+Email Structure
+* The email template is an HTML file based on an SVG design provided by the customer.
+* The email body is pre-generated within Monday.com and replaces the default placeholder text.
+* The images must be manually uploaded by the user before sending.
+________________
+
+
+4.3 Retrieving Lenders' Emails
+To send the email, we need to retrieve all lenders associated with the selected business.
+Steps:
+1. Create an empty list (landersEmailsTo) to store lender email addresses.
+2. Fetch all lenders from board 1720560983 using the Monday Graph API (paginated, 500 items per request).
+3. Filter lenders based on business association:
+   * Match field ID "1814231990" from board 1720560988
+   * With field ID "text_mkm142mk" in board 1720560983
+4. If a match is found, extract the lender's email from field ID "email_mkm15azq" and add it to landersEmailsTo.
+5. Display the retrieved lender emails in the UI before sending.
+________________
+
+
+5. Email Sending Process
+5.1 Sending a Test Email
+* Uses SendGrid to send the email (including any uploaded images) to the logged-in user (e.g., avimunk@gmail.com).
+* The test email action does not require logging or tracking.
+5.2 Sending the Email to All Lenders
+1. Display a pop-up confirmation:
+   * "This will send the email to XX lenders" (list of emails shown for review).
+   * Options: Continue / Cancel.
+2. If the user selects Continue:
+   * Send the email to all recipients in landersEmailsTo using SendGrid.
+   * If an email fails, stay on the same page and display an error message.
+3. Display success/failure message.
+4. Redirect the user back to the list view.
+________________
+
+
+6. Error Handling & Edge Cases
+Scenario
+	Expected Behavior
+	No lenders match the business
+	Show message: "No lenders found for this business."
+	User does not upload images
+	Block sending until both images are uploaded.
+	Invalid or missing lender emails
+	Display an error message, do not send email.
+	SendGrid failure
+	Stay on the same page, display an error message.
+	User cancels the email send action
+	No emails are sent, return to the email preview page.
+	________________
+
+
+7. Summary of API Calls & Dependencies
+Functionality
+	API Used
+	Fetch business list
+	Monday GraphQL API
+	Fetch lenders
+	Monday GraphQL API
+	Send email
+	SendGrid API
+	________________
+
+
+Final Notes
+* The email is generated using an HTML template based on an SVG design.
+* The email body is pre-processed inside Monday.com and cannot be edited at this stage.
+* The user must manually upload images before sending the email.
+* A test email can be sent at any time for validation.
+* The final email send action is irreversible, so a confirmation step is required.
+
+
+SparkIL                                                                            Code For Israel
